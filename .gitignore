@@ -1,0 +1,7 @@
+# Obsidian workspace/cache
+.obsidian/workspace.json
+.obsidian/cache/
+
+# Obsidian sync & temp files
+.obsidian/plugins/obsidian-sync/
+.obsidian/plugins/obsidian-advanced-uri/
