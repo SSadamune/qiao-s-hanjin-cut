@@ -34,7 +34,13 @@ pip install openpyxl zhconv
 python scripts/excel_to_md.py
 ```
 
-脚本会读取 Excel，生成或覆盖 `notes/武将/` 下的笔记。
+脚本会读取《乔剪国战表格.xlsx》，生成或覆盖 `notes/武将/` 下的笔记。
+
+如发生下列错误，只需用 Excel 打开上述文件，另存为同名文件即可。
+
+```bash
+TypeError: Fill() takes no arguments
+```
 
 ## ✅ 总结
 
