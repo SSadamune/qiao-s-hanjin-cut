@@ -5,3 +5,6 @@
 # Obsidian sync & temp files
 .obsidian/plugins/obsidian-sync/
 .obsidian/plugins/obsidian-advanced-uri/
+
+# Python cache
+__pycache__/
