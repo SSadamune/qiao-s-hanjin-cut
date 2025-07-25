@@ -106,6 +106,39 @@ def process_sheet(ws, sheet_name, all_heroes):
         # aliases
         aliases = [hero_name] + ([title] if title else [])
 
+        # 生成珠联璧合链接表
+        monarch_link = ""
+        non_monarch_links = []
+        synergy_links = []
+        if "君主" not in types:
+            # 1. 自己珠联璧合指向的武将，且对方不是君主
+            for s_name in synergy.split(" ") if synergy else []:
+                s_name = s_name.strip()
+                if s_name and s_name != hero_name:
+                    for h in all_heroes:
+                        if h["name"] == s_name and not h.get("is_monarch"):
+                            synergy_links.append(f"[[{h['code']} {h['name']}]]")
+            # 2. 被其他武将珠联璧合指向，且对方不是君主
+            for h in all_heroes:
+                if h["name"] == hero_name:
+                    if h.get("is_monarch"):
+                        monarch_link = f"[[{h['code']} {h['name']}]]"
+                    else:
+                        non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+                if (
+                    h["name"] != hero_name
+                    and not h.get("is_monarch")
+                    and hero_name in h.get("synergy", [])
+                ):
+                    synergy_links.append(f"[[{h['code']} {h['name']}]]")
+        else:
+            # 君主武将也需要查找同名非君主
+            for h in all_heroes:
+                if h["name"] == hero_name and not h.get("is_monarch"):
+                    non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+        # 去重
+        synergy_links = list(dict.fromkeys(synergy_links))
+
         # -------- YAML --------
         yaml_lines = ["---"]
         yaml_lines.append(f"编号: {code}")
@@ -115,7 +148,7 @@ def process_sheet(ws, sheet_name, all_heroes):
         if hp_value:
             yaml_lines.append(f"体力值: {hp_value}")
         if synergy:
-            yaml_lines.append(f"珠联璧合: {synergy}")
+            yaml_lines.append(f"卡面珠联璧合: {synergy}")
         if leadership:
             yaml_lines.append(f"统领能力: {leadership}")
 
@@ -132,23 +165,13 @@ def process_sheet(ws, sheet_name, all_heroes):
         header_title = f"{title + '-' if title else ''}{hero_name}"
         body_lines = [f"# {header_title}\n"]
 
-        # 合并遍历all_heroes，查找同名君主和所有同名非君主
-        monarch_link = ""
-        non_monarch_links = []
-        for h in all_heroes:
-            if h["name"] == hero_name:
-                if h.get("is_monarch"):
-                    monarch_link = f"[[{h['code']} {h['name']}]]"
-                else:
-                    non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
-
         if title:
             body_lines.append(f"**编号**: {code}  ")
-
         if hp_value:
             body_lines.append(f"**体力值**: {hp_value}  ")
-        if synergy:
-            body_lines.append(f"**珠联璧合**: {synergy}  ")
+
+        if synergy_links:
+            body_lines.append(f"**珠联璧合**: {', '.join(synergy_links)}  ")
 
         if "君主" in types and non_monarch_links:
             body_lines.append(f"**未君主升变**: {', '.join(non_monarch_links)}  ")
