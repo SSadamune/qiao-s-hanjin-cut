@@ -54,24 +54,15 @@ def parse_factions_from_code(code):
 
     # 叛谍
     if "^" in code:
-        res["types"].append("叛谍")
+        if "叛谍" not in res["types"]:
+            res["types"].append("叛谍")
         fake, real = code.split("^", 1)
         fake_parts = split_multi_forces(fake)
         real_prefix = re.match(r"^[A-Z&/]+", real)
         real_parts = split_multi_forces(real_prefix.group(0)) if real_prefix else []
-
-        for p in fake_parts:
-            prefix_only = re.match(r"^[A-Z]+", p)
-            if prefix_only:
-                nm = map_force_to_name(prefix_only.group(0))
-                if nm:
-                    res["伪装势力"].append(nm)
-        for p in real_parts:
-            prefix_only = re.match(r"^[A-Z]+", p)
-            if prefix_only:
-                nm = map_force_to_name(prefix_only.group(0))
-                if nm:
-                    res["所属势力"].append(nm)
+        res["伪装势力"] = [map_force_to_name(p) for p in fake_parts if map_force_to_name(p)]
+        res["所属势力"] = [map_force_to_name(p) for p in real_parts if map_force_to_name(p)]
+        return res   # ✅ 提前返回，叛谍不走后续逻辑
 
     # 隐士
     if code.startswith("YS"):
@@ -87,6 +78,12 @@ def parse_factions_from_code(code):
                     nm = map_force_to_name(prefix_only.group(0))
                     if nm:
                         res["所属势力"].append(nm)
+                        
+    # ✅ 如果某个势力已经在所属势力里，就不再出现在效忠势力中
+    if res["所属势力"] and res["效忠势力"]:
+        res["效忠势力"] = [
+            f for f in res["效忠势力"] if f not in res["所属势力"]
+        ]
 
     # ✅ 最后统一去重 & 排序
     res["所属势力"] = sort_forces_by_map(list(set(res["所属势力"])))

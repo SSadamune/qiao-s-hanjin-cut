@@ -56,14 +56,13 @@ def process_sheet(ws, sheet_name, monarch_names):
         # --- 势力&类型解析 ---
         parsed = parse_factions_from_code(code)
         types = parsed["types"][:]
-        own_factions = parsed["所属势力"] + parsed["伪装势力"]
 
-        # 仅当不为君主/野心家/隐士才检测客将
-        guest_factions = []
-        if "君主" not in types and "野心家" not in types and "隐士" not in types:
-            guest_factions = detect_guest_factions(ws, row_idx, own_factions)
-            if guest_factions:
-                types.append("客将")
+        own_forces = parsed["所属势力"]  # 叛谍只有真实势力
+        disguise_forces = parsed["伪装势力"]  # 叛谍伪装势力
+
+        guest_factions = detect_guest_factions(ws, row_idx, own_forces, disguise_forces)
+        if guest_factions:
+            types.append("客将")
 
         # 如果此武将不是君主，但名字在君主缓存里 → 可君主升变
         if "君主" not in types and hero_name in monarch_names:
@@ -73,7 +72,16 @@ def process_sheet(ws, sheet_name, monarch_names):
         forces_for_tags = parsed["所属势力"]
 
         # tags 生成
-        all_tags = sort_tags_final(sheet_name, current_package, types, forces_for_tags, hero_name)
+        all_tags = sort_tags_final(
+            sheet_name,
+            current_package,
+            types,
+            hero_name,
+            forces_for_tags,
+            parsed["效忠势力"],
+            parsed["伪装势力"],
+            guest_factions,
+        )
 
         # aliases
         aliases = [hero_name] + ([title] if title else [])
@@ -110,13 +118,13 @@ def process_sheet(ws, sheet_name, monarch_names):
         if types:
             body_lines.append(f"**武将类型**: {', '.join(types)}  ")
         if parsed["所属势力"]:
-            body_lines.append(f"**所属势力**: {', '.join(parsed['所属势力'])}  ")
+            body_lines.append(f"**所属势力**: {', '.join(x + '势力' for x in parsed['所属势力'])}  ")
         if parsed["效忠势力"]:
-            body_lines.append(f"**效忠势力**: {', '.join(parsed['效忠势力'])}  ")
+            body_lines.append(f"**效忠势力**: {', '.join(x + '势力' for x in parsed['效忠势力'])}  ")
         if parsed["伪装势力"]:
-            body_lines.append(f"**伪装势力**: {', '.join(parsed['伪装势力'])}  ")
+            body_lines.append(f"**伪装势力**: {', '.join(x + '势力' for x in parsed['伪装势力'])}  ")
         if guest_factions:
-            body_lines.append(f"**客将势力**: {', '.join(guest_factions)}  ")
+            body_lines.append(f"**客将势力**: {', '.join(x + '势力' for x in guest_factions)}  ")
 
         if hp_value:
             body_lines.append(f"**体力值**: {hp_value}  ")
