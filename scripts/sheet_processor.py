@@ -23,7 +23,7 @@ from constants import (
     OUTPUT_DIR,
     IGNORED_PACKAGES,
 )
-from utils import sanitize_filename, detect_guest_factions, sort_tags_final
+from utils import sanitize_filename, detect_guest_factions, sort_tags_final, hero_link
 from parsers import parse_factions_from_code
 
 # 等价武将
@@ -40,11 +40,6 @@ def is_same_hero(name1, code1, name2, code2):
         ):
             return True
     return name1 == name2
-
-
-def hero_link(hero):
-    """生成指向武将页面的链接"""
-    return f"[[{hero['code']} {hero['name']}]]"
 
 
 def process_sheet(ws, sheet_name, all_heroes):

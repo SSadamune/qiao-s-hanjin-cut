@@ -14,6 +14,11 @@ from constants import (
 )
 
 
+def hero_link(hero):
+    """生成指向武将页面的链接"""
+    return f"[[{sanitize_filename(hero['code'])} {hero['name'].replace('&', '_')}]]"
+
+
 def sanitize_filename(name: str) -> str:
     """将文件名中的非法字符替换为下划线，并去除首尾空格"""
     return re.sub(r'[\\/:*?"<>|\r\n]+', "_", name).strip()
