@@ -25,12 +25,12 @@ SKIP_PREFIXES = ("黑桃", "梅花", "红桃", "方片", "EMA", "Z.")
 
 # 势力前缀映射
 FORCE_MAP = {
-    "HAN": "汉势力",
-    "WEI": "魏势力",
-    "SHU": "蜀势力",
-    "WU": "吴势力",
-    "QUN": "群势力",
-    "JIN": "晋势力"
+    "HAN": "汉",
+    "WEI": "魏",
+    "SHU": "蜀",
+    "WU": "吴",
+    "QUN": "群",
+    "JIN": "晋"
 }
 
 # 武将类型顺序
@@ -56,12 +56,12 @@ FIRST_6_COLS = [COL_PACKAGE, COL_CODE, COL_NAME, COL_TITLE, COL_HP, COL_SYNERGY]
 
 # 颜色映射
 COLOR_MEANINGS = {
-    "FFFFEEAD": "汉势力",
-    "FFC5CAD3": "群势力",
-    "FFC7DCFF": "魏势力",
-    "FFF2C7FF": "晋势力",
-    "FFFFC9C7": "蜀势力",
-    "FFC3EAD5": "吴势力",
+    "FFFFEEAD": "汉",
+    "FFC5CAD3": "群",
+    "FFC7DCFF": "魏",
+    "FFF2C7FF": "晋",
+    "FFFFC9C7": "蜀",
+    "FFC3EAD5": "吴",
     "FFFFE270": "君主",
     "FF5E2281": "野心家",
     "FFF3F5F7": "隐士"
