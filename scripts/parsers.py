@@ -8,7 +8,15 @@ def sort_forces_by_map(forces):
     order = list(FORCE_MAP.values())  # ["汉势力","魏势力","蜀势力","吴势力","群势力","晋势力"]
     return sorted(forces, key=lambda f: order.index(f) if f in order else 999)
 
-def parse_factions_from_code(code):
+def extract_valid_force(part: str):
+    """从分割后的字符串中提取有效势力（支持 QUNXXX / WEI002 这种带编号的）"""
+    for k, v in FORCE_MAP.items():
+        if part.startswith(k):
+            return v
+    return None
+
+
+def parse_factions_from_code(code: str, ws=None, row_idx=None):
     res = {
         "types": [],
         "所属势力": [],
@@ -16,78 +24,85 @@ def parse_factions_from_code(code):
         "伪装势力": []
     }
 
-    # 野心家
+    # 野心家（包含 AM 即是）
     if "AM" in code:
-        res["types"].append("野心家")
+        if "野心家" not in res["types"]:
+            res["types"].append("野心家")
+
+        # 如果括号里有内容 → 解析为效忠势力
         inner = re.search(r"\((.*?)\)", code)
         if inner:
             for part in split_multi_forces(inner.group(1)):
-                prefix_only = re.match(r"^[A-Z]+", part)
-                if prefix_only:
-                    nm = map_force_to_name(prefix_only.group(0))
-                    if nm:
-                        res["效忠势力"].append(nm)
+                nm = extract_valid_force(part)
+                if nm:
+                    res["效忠势力"].append(nm)
 
-    # 君主（只要包含EM）
+    # 君主（只要包含 EM）
     if "EM" in code:
-        res["types"].append("君主")
+        if "君主" not in res["types"]:
+            res["types"].append("君主")
+
+        # 括号里的势力
         inner = re.search(r"\((.*?)\)", code)
         if inner:
             for part in split_multi_forces(inner.group(1)):
-                prefix_only = re.match(r"^[A-Z]+", part)
-                if prefix_only:
-                    nm = map_force_to_name(prefix_only.group(0))
-                    if nm:
-                        res["所属势力"].append(nm)
+                nm = extract_valid_force(part)
+                if nm:
+                    res["所属势力"].append(nm)
 
-    # 叛首（只标记叛首）
-    if "REB" in code:
-        res["types"].append("叛首")
+    # 叛首
+    if "REB(" in code:
+        if "叛首" not in res["types"]:
+            res["types"].append("叛首")
+
         inner = re.search(r"\((.*?)\)", code)
         if inner:
             for part in split_multi_forces(inner.group(1)):
-                prefix_only = re.match(r"^[A-Z]+", part)
-                if prefix_only:
-                    nm = map_force_to_name(prefix_only.group(0))
-                    if nm:
-                        res["所属势力"].append(nm)
+                nm = extract_valid_force(part)
+                if nm:
+                    res["所属势力"].append(nm)
 
-    # 叛谍
+    # 叛谍（^ 前伪装，^ 后真实）
     if "^" in code:
         if "叛谍" not in res["types"]:
             res["types"].append("叛谍")
+
         fake, real = code.split("^", 1)
-        fake_parts = split_multi_forces(fake)
+
+        # ^ 前 → 伪装势力
+        for part in split_multi_forces(fake):
+            nm = extract_valid_force(part)
+            if nm:
+                res["伪装势力"].append(nm)
+
+        # ^ 后 → 真实势力（只取前缀部分）
         real_prefix = re.match(r"^[A-Z&/]+", real)
-        real_parts = split_multi_forces(real_prefix.group(0)) if real_prefix else []
-        res["伪装势力"] = [map_force_to_name(p) for p in fake_parts if map_force_to_name(p)]
-        res["所属势力"] = [map_force_to_name(p) for p in real_parts if map_force_to_name(p)]
-        return res   # ✅ 提前返回，叛谍不走后续逻辑
+        if real_prefix:
+            for part in split_multi_forces(real_prefix.group(0)):
+                nm = extract_valid_force(part)
+                if nm:
+                    res["所属势力"].append(nm)
 
     # 隐士
     if code.startswith("YS"):
-        res["types"].append("隐士")
+        if "隐士" not in res["types"]:
+            res["types"].append("隐士")
 
-    # 普通匹配（没势力才兜底）
-    if not res["所属势力"] and not res["效忠势力"] and "^" not in code and not code.startswith("YS"):
+    # ✅ 普通解析
+    if not res["效忠势力"] and "^" not in code and not code.startswith("YS"):
         prefix_match = re.match(r"^[A-Z&/]+", code)
         if prefix_match:
             for part in split_multi_forces(prefix_match.group(0)):
-                prefix_only = re.match(r"^[A-Z]+", part)
-                if prefix_only:
-                    nm = map_force_to_name(prefix_only.group(0))
-                    if nm:
-                        res["所属势力"].append(nm)
-                        
-    # ✅ 如果某个势力已经在所属势力里，就不再出现在效忠势力中
-    if res["所属势力"] and res["效忠势力"]:
-        res["效忠势力"] = [
-            f for f in res["效忠势力"] if f not in res["所属势力"]
-        ]
-
+                nm = extract_valid_force(part)
+                if nm:
+                    res["所属势力"].append(nm)
+                    
     # ✅ 最后统一去重 & 排序
     res["所属势力"] = sort_forces_by_map(list(set(res["所属势力"])))
-    res["效忠势力"] = sort_forces_by_map(list(set(res["效忠势力"])))
+    res["效忠势力"] = sort_forces_by_map(
+        [f for f in set(res["效忠势力"]) if f not in res["所属势力"]]  # 如果和所属势力重复就剔除（野君司马懿）
+    )
     res["伪装势力"] = sort_forces_by_map(list(set(res["伪装势力"])))
 
     return res
+
