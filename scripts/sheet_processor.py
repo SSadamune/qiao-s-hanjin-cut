@@ -1,18 +1,34 @@
-# sheet_processor.py
+"""
+处理指定工作表中的武将数据，生成 Markdown 文件。
+"""
 
 import os
 from zhconv import convert
 from constants import (
-    COL_PACKAGE, COL_CODE, COL_NAME, COL_TITLE, COL_HP,
-    COL_SYNERGY, COL_LEADERSHIP,
-    COL_SKILL1_NAME, COL_SKILL1_DESC, COL_SKILL2_NAME, COL_SKILL2_DESC,
-    COL_SKILL3_NAME, COL_SKILL3_DESC,
-    SKIP_PREFIXES, HP_MAP, OUTPUT_DIR, IGNORED_PACKAGES
+    COL_PACKAGE,
+    COL_CODE,
+    COL_NAME,
+    COL_TITLE,
+    COL_HP,
+    COL_SYNERGY,
+    COL_LEADERSHIP,
+    COL_SKILL1_NAME,
+    COL_SKILL1_DESC,
+    COL_SKILL2_NAME,
+    COL_SKILL2_DESC,
+    COL_SKILL3_NAME,
+    COL_SKILL3_DESC,
+    SKIP_PREFIXES,
+    HP_MAP,
+    OUTPUT_DIR,
+    IGNORED_PACKAGES,
 )
 from utils import sanitize_filename, detect_guest_factions, sort_tags_final
 from parsers import parse_factions_from_code
 
+
 def process_sheet(ws, sheet_name, monarch_names):
+    """处理指定工作表中的武将数据，生成 Markdown 文件"""
     current_package = None
     count = 0
 
@@ -37,7 +53,7 @@ def process_sheet(ws, sheet_name, monarch_names):
 
         # 称号转简体
         raw_title = ws.cell(row=row_idx, column=COL_TITLE).value
-        title = convert(str(raw_title), 'zh-cn') if raw_title else ""
+        title = convert(str(raw_title), "zh-cn") if raw_title else ""
 
         raw_hp = ws.cell(row=row_idx, column=COL_HP).value
         raw_hp = str(raw_hp).strip() if raw_hp else ""
@@ -121,13 +137,21 @@ def process_sheet(ws, sheet_name, monarch_names):
         if types:
             body_lines.append(f"**武将类型**: {', '.join(types)}  ")
         if parsed["所属势力"]:
-            body_lines.append(f"**所属势力**: {', '.join(x + '势力' for x in parsed['所属势力'])}  ")
+            body_lines.append(
+                f"**所属势力**: {', '.join(x + '势力' for x in parsed['所属势力'])}  "
+            )
         if parsed["效忠势力"]:
-            body_lines.append(f"**效忠势力**: {', '.join(x + '势力' for x in parsed['效忠势力'])}  ")
+            body_lines.append(
+                f"**效忠势力**: {', '.join(x + '势力' for x in parsed['效忠势力'])}  "
+            )
         if parsed["伪装势力"]:
-            body_lines.append(f"**伪装势力**: {', '.join(x + '势力' for x in parsed['伪装势力'])}  ")
+            body_lines.append(
+                f"**伪装势力**: {', '.join(x + '势力' for x in parsed['伪装势力'])}  "
+            )
         if guest_factions:
-            body_lines.append(f"**客将势力**: {', '.join(x + '势力' for x in guest_factions)}  ")
+            body_lines.append(
+                f"**客将势力**: {', '.join(x + '势力' for x in guest_factions)}  "
+            )
 
         if hp_value:
             body_lines.append(f"**体力值**: {hp_value}  ")

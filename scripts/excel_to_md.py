@@ -1,10 +1,16 @@
+"""
+主程序，负责加载 Excel 文件、缓存君主武将名、处理每个工作表并生成笔记。
+"""
+
 import os
 from openpyxl import load_workbook
 from constants import EXCEL_PATH, OUTPUT_DIR, TARGET_SHEETS
 from monarch_cache import scan_all_monarch_names
 from sheet_processor import process_sheet
 
+
 def main():
+    """主函数，负责加载 Excel 文件、缓存君主武将名、处理每个工作表并生成笔记"""
     print(f"📖 加载 Excel: {EXCEL_PATH}")
     wb = load_workbook(EXCEL_PATH)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -20,6 +26,7 @@ def main():
         total_count += process_sheet(ws, sheet_name, monarch_names)
 
     print(f"\n🎉 所有武将笔记已生成完毕，共 {total_count} 条！")
+
 
 if __name__ == "__main__":
     main()

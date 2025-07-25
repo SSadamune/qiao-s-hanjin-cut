@@ -1,9 +1,23 @@
+"""
+工具函数，包含文件名处理、颜色获取、势力映射等常用功能。
+"""
+
 import re
-from constants import FORCE_MAP, COLOR_MEANINGS, FIRST_6_COLS, TYPE_ORDER, COL_CODE, COL_NAME, SKIP_PREFIXES
+from constants import (
+    FORCE_MAP,
+    COLOR_MEANINGS,
+    FIRST_6_COLS,
+    TYPE_ORDER,
+    COL_CODE,
+    COL_NAME,
+    SKIP_PREFIXES,
+)
+
 
 def sanitize_filename(name: str) -> str:
     """将文件名中的非法字符替换为下划线，并去除首尾空格"""
-    return re.sub(r'[\\/:*?"<>|\r\n]+', '_', name).strip()
+    return re.sub(r'[\\/:*?"<>|\r\n]+', "_", name).strip()
+
 
 def get_cell_bg_color(cell):
     """获取单元格的背景色RGB（如有），否则返回None"""
@@ -11,13 +25,16 @@ def get_cell_bg_color(cell):
         return cell.fill.fgColor.rgb
     return None
 
+
 def split_multi_forces(force_str: str):
     """多势力字符串拆分 & /"""
     return re.split(r"[&/]", force_str)
 
+
 def map_force_to_name(prefix: str):
     """前缀映射中文势力名"""
     return FORCE_MAP.get(prefix, "")
+
 
 def detect_guest_factions(ws, row_idx, own_forces, disguise_forces):
     """检查前6列颜色 → 找客将势力（仅FORCE_MAP中的六势力，按 FORCE_MAP 顺序排序）"""
@@ -40,23 +57,25 @@ def detect_guest_factions(ws, row_idx, own_forces, disguise_forces):
     ordered_guest = sorted(guest, key=valid_force_names.index)
     return ordered_guest
 
+
 def force_sort_key(force_name: str):
     """按照 FORCE_MAP 的顺序返回排序 key"""
-    order = list(FORCE_MAP.values()) 
+    order = list(FORCE_MAP.values())
     try:
         return order.index(force_name)
     except ValueError:
         return 999
 
+
 def sort_tags_final(
-    sheet_name,       # sheet 名
-    package,          # 分包
-    types,            # 武将类型
-    hero_name,        # 武将名
-    force_tags,       # 所属势力列表
-    loyalty_tags,     # 效忠势力列表
+    sheet_name,  # sheet 名
+    package,  # 分包
+    types,  # 武将类型
+    hero_name,  # 武将名
+    force_tags,  # 所属势力列表
+    loyalty_tags,  # 效忠势力列表
     disguise_forces,  # 伪装势力列表
-    guest_tags        # 客将势力列表
+    guest_tags,  # 客将势力列表
 ):
     """
     最终 tags 顺序：
@@ -114,6 +133,7 @@ def sort_tags_final(
             seen.add(t)
 
     return unique_tags
+
 
 def is_valid_hero_row(ws, row_idx):
     """判断指定行是否为有效武将（编号和姓名均非空，编号无前缀）"""

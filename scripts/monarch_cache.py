@@ -1,7 +1,10 @@
-# monarch_cache.py
+"""
+预扫描所有君主武将名，用于后续武将笔记生成。
+"""
 
 from constants import COL_CODE, COL_NAME, SKIP_PREFIXES
 from parsers import parse_factions_from_code
+
 
 def scan_all_monarch_names(wb, target_sheets):
     """预扫描所有君主武将名"""

@@ -1,28 +1,32 @@
+"""
+解析武将编号字符串，提取类型、势力等结构化信息的工具函数。
+"""
+
 import re
-from utils import split_multi_forces, map_force_to_name
+from utils import split_multi_forces
 
 from constants import FORCE_MAP
 
+
 def sort_forces_by_map(forces):
     """根据 FORCE_MAP 的定义顺序排序"""
-    order = list(FORCE_MAP.values())  # ["汉势力","魏势力","蜀势力","吴势力","群势力","晋势力"]
+    order = list(
+        FORCE_MAP.values()
+    )  # ["汉势力","魏势力","蜀势力","吴势力","群势力","晋势力"]
     return sorted(forces, key=lambda f: order.index(f) if f in order else 999)
 
+
 def extract_valid_force(part: str):
-    """从分割后的字符串中提取有效势力（支持 QUNXXX / WEI002 这种带编号的）"""
+    """从分割后的字符串中提取有效势力（支持 QUNXXX 等未确定数字的编号）"""
     for k, v in FORCE_MAP.items():
         if part.startswith(k):
             return v
     return None
 
 
-def parse_factions_from_code(code: str, ws=None, row_idx=None):
-    res = {
-        "types": [],
-        "所属势力": [],
-        "效忠势力": [],
-        "伪装势力": []
-    }
+def parse_factions_from_code(code: str):
+    """解析编号字符串，提取武将类型、所属/效忠/伪装势力等信息"""
+    res = {"types": [], "所属势力": [], "效忠势力": [], "伪装势力": []}
 
     # 野心家（包含 AM 即是）
     if "AM" in code:
@@ -96,13 +100,14 @@ def parse_factions_from_code(code: str, ws=None, row_idx=None):
                 nm = extract_valid_force(part)
                 if nm:
                     res["所属势力"].append(nm)
-                    
+
     # ✅ 最后统一去重 & 排序
     res["所属势力"] = sort_forces_by_map(list(set(res["所属势力"])))
     res["效忠势力"] = sort_forces_by_map(
-        [f for f in set(res["效忠势力"]) if f not in res["所属势力"]]  # 如果和所属势力重复就剔除（野君司马懿）
+        [
+            f for f in set(res["效忠势力"]) if f not in res["所属势力"]
+        ]  # 如果和所属势力重复就剔除（野君司马懿）
     )
     res["伪装势力"] = sort_forces_by_map(list(set(res["伪装势力"])))
 
     return res
-

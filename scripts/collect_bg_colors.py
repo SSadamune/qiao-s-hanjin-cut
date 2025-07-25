@@ -1,6 +1,17 @@
+"""
+统计并输出Excel中武将前6列的单元格背景色分布，辅助完善颜色映射。
+"""
+
 import os
 from openpyxl import load_workbook
-from constants import COLOR_MEANINGS, KNOWN_COLORS, COL_CODE, COL_NAME, FIRST_6_COLS, TARGET_SHEETS
+from constants import (
+    COLOR_MEANINGS,
+    KNOWN_COLORS,
+    COL_CODE,
+    COL_NAME,
+    FIRST_6_COLS,
+    TARGET_SHEETS,
+)
 from utils import get_cell_bg_color, is_valid_hero_row
 
 VAULT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -37,10 +48,12 @@ def collect_colors_from_sheet(ws, color_counter, unknown_color_rows, total_hero)
                     unknown_color_rows[color] = []
                 unknown_color_rows[color].append(code_name)
 
+
 def main():
+    """主函数，负责加载 Excel 文件、统计颜色分布"""
     wb = load_workbook(EXCEL_PATH)
     total_hero = [0]  # 用 list 方便引用计数
-    color_counter = {}   # 已知颜色 → 次数
+    color_counter = {}  # 已知颜色 → 次数
     unknown_color_rows = {}  # 未知颜色 → 行列表
 
     for sheet_name in TARGET_SHEETS:
@@ -65,6 +78,7 @@ def main():
                 print(f"  - {r}")
     else:
         print("\n✅ 没有发现未知颜色")
+
 
 if __name__ == "__main__":
     main()
