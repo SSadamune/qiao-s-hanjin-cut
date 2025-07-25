@@ -5,7 +5,7 @@
 import os
 from openpyxl import load_workbook
 from constants import EXCEL_PATH, OUTPUT_DIR, TARGET_SHEETS
-from monarch_cache import scan_all_monarch_names
+from heroes_cache import scan_all_heroes
 from sheet_processor import process_sheet
 
 
@@ -15,15 +15,15 @@ def main():
     wb = load_workbook(EXCEL_PATH)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # 缓存君主武将名
-    monarch_names = scan_all_monarch_names(wb, TARGET_SHEETS)
-    print(f"📌 缓存君主武将名: {len(monarch_names)} 个")
+    # 缓存所有武将信息
+    all_heroes = scan_all_heroes(wb, TARGET_SHEETS)
+    print(f"📌 缓存武将数: {len(all_heroes)} 个")
 
     total_count = 0
     for sheet_name in TARGET_SHEETS:
         print(f"\n🔄 解析 Sheet: {sheet_name}")
         ws = wb[sheet_name]
-        total_count += process_sheet(ws, sheet_name, monarch_names)
+        total_count += process_sheet(ws, sheet_name, all_heroes)
 
     print(f"\n🎉 所有武将笔记已生成完毕，共 {total_count} 条！")
 

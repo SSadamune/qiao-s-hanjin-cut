@@ -27,8 +27,9 @@ from utils import sanitize_filename, detect_guest_factions, sort_tags_final
 from parsers import parse_factions_from_code
 
 
-def process_sheet(ws, sheet_name, monarch_names):
+def process_sheet(ws, sheet_name, all_heroes):
     """处理指定工作表中的武将数据，生成 Markdown 文件"""
+    monarch_names = {h["name"] for h in all_heroes if h.get("is_monarch")}
     current_package = None
     count = 0
 
@@ -131,11 +132,32 @@ def process_sheet(ws, sheet_name, monarch_names):
         header_title = f"{title + '-' if title else ''}{hero_name}"
         body_lines = [f"# {header_title}\n"]
 
+        # 合并遍历all_heroes，查找同名君主和所有同名非君主
+        monarch_link = ""
+        non_monarch_links = []
+        for h in all_heroes:
+            if h["name"] == hero_name:
+                if h.get("is_monarch"):
+                    monarch_link = f"[[{h['code']} {h['name']}]]"
+                else:
+                    non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+
         if title:
             body_lines.append(f"**编号**: {code}  ")
 
+        if hp_value:
+            body_lines.append(f"**体力值**: {hp_value}  ")
+        if synergy:
+            body_lines.append(f"**珠联璧合**: {synergy}  ")
+
+        if "君主" in types and non_monarch_links:
+            body_lines.append(f"**未君主升变**: {', '.join(non_monarch_links)}  ")
+        elif monarch_link and "君主" not in types:
+            body_lines.append(f"**君主升变**: {monarch_link}  ")
+
         if types:
             body_lines.append(f"**武将类型**: {', '.join(types)}  ")
+
         if parsed["所属势力"]:
             body_lines.append(
                 f"**所属势力**: {', '.join(x + '势力' for x in parsed['所属势力'])}  "
@@ -153,10 +175,6 @@ def process_sheet(ws, sheet_name, monarch_names):
                 f"**客将势力**: {', '.join(x + '势力' for x in guest_factions)}  "
             )
 
-        if hp_value:
-            body_lines.append(f"**体力值**: {hp_value}  ")
-        if synergy:
-            body_lines.append(f"**珠联璧合**: {synergy}  ")
         if leadership:
             body_lines.append(f"**统领能力**: {leadership}  ")
 
