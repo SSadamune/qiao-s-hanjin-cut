@@ -1,10 +1,12 @@
 import re
-from constants import FORCE_MAP, COLOR_MEANINGS, FIRST_6_COLS, TYPE_ORDER
+from constants import FORCE_MAP, COLOR_MEANINGS, FIRST_6_COLS, TYPE_ORDER, COL_CODE, COL_NAME, SKIP_PREFIXES
 
 def sanitize_filename(name: str) -> str:
+    """将文件名中的非法字符替换为下划线，并去除首尾空格"""
     return re.sub(r'[\\/:*?"<>|\r\n]+', '_', name).strip()
 
 def get_cell_bg_color(cell):
+    """获取单元格的背景色RGB（如有），否则返回None"""
     if cell.fill and cell.fill.fgColor and cell.fill.fgColor.type == "rgb":
         return cell.fill.fgColor.rgb
     return None
@@ -35,7 +37,7 @@ def detect_guest_factions(ws, row_idx, own_forces, disguise_forces):
                 guest.add(color_force)
 
     # 排序，保证输出顺序符合 FORCE_MAP
-    ordered_guest = sorted(guest, key=lambda f: valid_force_names.index(f))
+    ordered_guest = sorted(guest, key=valid_force_names.index)
     return ordered_guest
 
 def force_sort_key(force_name: str):
@@ -81,22 +83,22 @@ def sort_tags_final(
             tags.append(t)
 
     # 3️⃣ 所属势力（FORCE_MAP 顺序）
-    for f in sorted(force_tags, key=lambda x: valid_force_order.index(x)):
+    for f in sorted(force_tags, key=valid_force_order.index):
         single = f[0]
         tags.append(f"势力：{single}")
 
     # 4️⃣ 效忠势力
-    for f in sorted(loyalty_tags, key=lambda x: valid_force_order.index(x)):
+    for f in sorted(loyalty_tags, key=valid_force_order.index):
         single = f[0]
         tags.append(f"效忠：{single}")
 
     # 5️⃣ 客将势力
-    for f in sorted(guest_tags, key=lambda x: valid_force_order.index(x)):
+    for f in sorted(guest_tags, key=valid_force_order.index):
         single = f[0]
         tags.append(f"客将：{single}")
 
     # 6️⃣ 伪装势力
-    for f in sorted(disguise_forces, key=lambda x: valid_force_order.index(x)):
+    for f in sorted(disguise_forces, key=valid_force_order.index):
         single = f[0]
         tags.append(f"伪装：{single}")
 
@@ -112,3 +114,14 @@ def sort_tags_final(
             seen.add(t)
 
     return unique_tags
+
+def is_valid_hero_row(ws, row_idx):
+    """判断指定行是否为有效武将（编号和姓名均非空，编号无前缀）"""
+    code_cell = ws.cell(row=row_idx, column=COL_CODE)
+    name_cell = ws.cell(row=row_idx, column=COL_NAME)
+    if not code_cell.value or not name_cell.value:
+        return False
+    code = str(code_cell.value).strip()
+    if code.startswith(SKIP_PREFIXES):
+        return False
+    return True
