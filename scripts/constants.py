@@ -67,5 +67,8 @@ COLOR_MEANINGS = {
     "FFF3F5F7": "隐士"
 }
 
-# 允许正常识别的颜色集合（快速判断）
+# 允许正常识别的颜色集合
 KNOWN_COLORS = set(COLOR_MEANINGS.keys())
+
+# 在解析时忽略的分包名
+IGNORED_PACKAGES = {"隐世", "妙仙"}

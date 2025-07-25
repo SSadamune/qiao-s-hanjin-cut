@@ -7,7 +7,7 @@ from constants import (
     COL_SYNERGY, COL_LEADERSHIP,
     COL_SKILL1_NAME, COL_SKILL1_DESC, COL_SKILL2_NAME, COL_SKILL2_DESC,
     COL_SKILL3_NAME, COL_SKILL3_DESC,
-    SKIP_PREFIXES, HP_MAP, OUTPUT_DIR
+    SKIP_PREFIXES, HP_MAP, OUTPUT_DIR, IGNORED_PACKAGES
 )
 from utils import sanitize_filename, detect_guest_factions, sort_tags_final
 from parsers import parse_factions_from_code
@@ -22,12 +22,15 @@ def process_sheet(ws, sheet_name, monarch_names):
 
         pkg_val = ws.cell(row=row_idx, column=COL_PACKAGE).value
         if pkg_val:
-            current_package = str(pkg_val).strip()
+            pkg_val_str = str(pkg_val).strip()
+            if pkg_val_str not in IGNORED_PACKAGES:
+                current_package = pkg_val_str
 
         code_cell = ws.cell(row=row_idx, column=COL_CODE)
         code = str(code_cell.value).strip() if code_cell.value else ""
         hero_cell = ws.cell(row=row_idx, column=COL_NAME)
         hero_name = str(hero_cell.value).strip() if hero_cell.value else ""
+        hero_name = hero_name.replace("&", "_")
 
         if not code or not hero_name or code.startswith(SKIP_PREFIXES):
             continue
@@ -41,7 +44,7 @@ def process_sheet(ws, sheet_name, monarch_names):
         hp_value = HP_MAP.get(raw_hp, raw_hp)
 
         synergy = ws.cell(row=row_idx, column=COL_SYNERGY).value
-        synergy = str(synergy).strip() if synergy else ""
+        synergy = str(synergy).strip().replace("&", "_") if synergy else ""
 
         leadership = ws.cell(row=row_idx, column=COL_LEADERSHIP).value
         leadership = str(leadership).strip() if leadership else ""

@@ -8,3 +8,6 @@
 
 # Python cache
 __pycache__/
+
+# vscode config
+.vscode/
