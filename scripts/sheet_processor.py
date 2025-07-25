@@ -106,36 +106,53 @@ def process_sheet(ws, sheet_name, all_heroes):
         # aliases
         aliases = [hero_name] + ([title] if title else [])
 
-        # 生成珠联璧合链接表
+        # 变量定义
         monarch_link = ""
         non_monarch_links = []
+        loyalty_links = []
+        non_loyalty_link = ""
         synergy_links = []
-        if "君主" not in types:
-            # 1. 自己珠联璧合指向的武将，且对方不是君主
-            for s_name in synergy.split(" ") if synergy else []:
+
+        # 预处理当前武将的珠联璧合列表
+        current_synergy_list = []
+        if synergy and "君主" not in types:
+            for s_name in synergy.split(" "):
                 s_name = s_name.strip()
                 if s_name and s_name != hero_name:
-                    for h in all_heroes:
-                        if h["name"] == s_name and not h.get("is_monarch"):
-                            synergy_links.append(f"[[{h['code']} {h['name']}]]")
-            # 2. 被其他武将珠联璧合指向，且对方不是君主
-            for h in all_heroes:
-                if h["name"] == hero_name:
-                    if h.get("is_monarch"):
-                        monarch_link = f"[[{h['code']} {h['name']}]]"
-                    else:
-                        non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+                    current_synergy_list.append(s_name)
+
+        # 外层遍历 all_heroes
+        for h in all_heroes:
+            # 1. 君主升变逻辑
+            if h["name"] == hero_name:
+                if h.get("is_monarch"):
+                    monarch_link = f"[[{h['code']} {h['name']}]]"
+                else:
+                    non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+
+            # 2. 野心家效忠逻辑
+            if h["name"] == hero_name:
+                if "野心家" in types:
+                    if not h.get("is_ambitious"):
+                        loyalty_links.append(f"[[{h['code']} {h['name']}]]")
+                else:
+                    if h.get("is_ambitious"):
+                        non_loyalty_link = f"[[{h['code']} {h['name']}]]"
+
+            # 3. 珠联璧合逻辑（只有非君主武将）
+            if "君主" not in types:
+                # 自己珠联璧合指向的武将
+                if h["name"] in current_synergy_list and not h.get("is_monarch"):
+                    synergy_links.append(f"[[{h['code']} {h['name']}]]")
+
+                # 被其他武将珠联璧合指向
                 if (
                     h["name"] != hero_name
                     and not h.get("is_monarch")
                     and hero_name in h.get("synergy", [])
                 ):
                     synergy_links.append(f"[[{h['code']} {h['name']}]]")
-        else:
-            # 君主武将也需要查找同名非君主
-            for h in all_heroes:
-                if h["name"] == hero_name and not h.get("is_monarch"):
-                    non_monarch_links.append(f"[[{h['code']} {h['name']}]]")
+
         # 去重
         synergy_links = list(dict.fromkeys(synergy_links))
 
@@ -177,6 +194,11 @@ def process_sheet(ws, sheet_name, all_heroes):
             body_lines.append(f"**未君主升变**: {', '.join(non_monarch_links)}  ")
         elif monarch_link and "君主" not in types:
             body_lines.append(f"**君主升变**: {monarch_link}  ")
+
+        if "野心家" in types and loyalty_links:
+            body_lines.append(f"**效忠**: {', '.join(loyalty_links)}  ")
+        elif non_loyalty_link and "野心家" not in types:
+            body_lines.append(f"**未效忠**: {non_loyalty_link}  ")
 
         if types:
             body_lines.append(f"**武将类型**: {', '.join(types)}  ")
