@@ -5,7 +5,7 @@
 import os
 
 # Vault 路径
-VAULT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+VAULT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 EXCEL_PATH = os.path.join(VAULT_PATH, "resources", "乔剪国战表格.xlsx")
 OUTPUT_DIR = os.path.join(VAULT_PATH, "notes", "武将")
 

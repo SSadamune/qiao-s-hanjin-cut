@@ -3,9 +3,8 @@
 """
 
 import re
-from utils import split_multi_forces
-
-from constants import FORCE_MAP
+from .utils import split_multi_forces
+from .constants import FORCE_MAP
 
 
 def sort_forces_by_map(forces):

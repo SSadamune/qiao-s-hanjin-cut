@@ -4,7 +4,7 @@
 
 import os
 from zhconv import convert
-from constants import (
+from .constants import (
     COL_PACKAGE,
     COL_CODE,
     COL_NAME,
@@ -23,8 +23,8 @@ from constants import (
     OUTPUT_DIR,
     IGNORED_PACKAGES,
 )
-from utils import sanitize_filename, detect_guest_factions, sort_tags_final, hero_link
-from parsers import parse_factions_from_code
+from .utils import sanitize_filename, detect_guest_factions, sort_tags_final, hero_link
+from .parsers import parse_factions_from_code
 
 # 等价武将
 SPECIAL_EQUIV = [
@@ -112,12 +112,12 @@ def process_sheet(ws, sheet_name, all_heroes):
         synergy_links = []
 
         # 预处理当前武将的珠联璧合列表
-        current_synergy_list = []
+        current_synergy_set = set()
         if synergy and "君主" not in types:
             for s_name in synergy.split(" "):
                 s_name = s_name.strip()
                 if s_name and not is_same_hero(s_name, "", hero_name, code):
-                    current_synergy_list.append(s_name)
+                    current_synergy_set.add(s_name)
 
         # 外层遍历 all_heroes
         for h in all_heroes:
@@ -140,29 +140,28 @@ def process_sheet(ws, sheet_name, all_heroes):
                     loyalty_links.append(hero_link(h))
 
             # 3. 珠联璧合逻辑（只有非君主武将）
-            if "君主" not in types:
+            if "君主" not in types and not h.get("is_monarch"):
                 # 被其他武将珠联璧合指向
-                if not h.get("is_monarch") and h["name"] != hero_name:
-                    h_synergy = h.get("synergy", [])
-                    if isinstance(h_synergy, str):
-                        h_synergy_list = [
-                            x.strip() for x in h_synergy.split(" ") if x.strip()
-                        ]
-                    else:
-                        h_synergy_list = h_synergy
-                    for syn_name in h_synergy_list:
-                        if is_same_hero(hero_name, code, syn_name, ""):
-                            synergy_links.append(hero_link(h))
-                            break  # 只加一次
+                h_synergy = h.get("synergy", [])
+                if isinstance(h_synergy, str):
+                    h_synergy_set = {
+                        x.strip() for x in h_synergy.split(" ") if x.strip()
+                    }
+                else:
+                    h_synergy_set = set(h_synergy)
 
-                # 自己珠联璧合指向的武将（需考虑卧龙特殊等价）
-                if "君主" not in types:
-                    for s_name in current_synergy_list:
-                        if is_same_hero(h["name"], h["code"], s_name, "") and not h.get(
-                            "is_monarch"
-                        ):
-                            synergy_links.append(hero_link(h))
-                            break  # 只加第一个同名非君主
+                if any(
+                    is_same_hero(hero_name, code, syn_name, "")
+                    for syn_name in h_synergy_set
+                ):
+                    synergy_links.append(hero_link(h))
+
+                # 自己珠联璧合指向的武将
+                if h["name"] in current_synergy_set or any(
+                    is_same_hero(h["name"], h["code"], s_name, "")
+                    for s_name in current_synergy_set
+                ):
+                    synergy_links.append(hero_link(h))
 
         # 去重
         synergy_links = list(dict.fromkeys(synergy_links))

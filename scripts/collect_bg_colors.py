@@ -4,7 +4,7 @@
 
 import os
 from openpyxl import load_workbook
-from constants import (
+from domain.heroes.constants import (
     COLOR_MEANINGS,
     KNOWN_COLORS,
     COL_CODE,
@@ -12,7 +12,7 @@ from constants import (
     FIRST_6_COLS,
     TARGET_SHEETS,
 )
-from utils import get_cell_bg_color, is_valid_hero_row
+from domain.heroes.utils import get_cell_bg_color, is_valid_hero_row
 
 VAULT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 EXCEL_PATH = os.path.join(VAULT_PATH, "resources", "乔剪国战表格.xlsx")

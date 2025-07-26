@@ -3,7 +3,7 @@
 """
 
 import re
-from constants import (
+from .constants import (
     FORCE_MAP,
     COLOR_MEANINGS,
     FIRST_6_COLS,
