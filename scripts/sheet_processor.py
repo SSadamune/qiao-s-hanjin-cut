@@ -44,7 +44,6 @@ def is_same_hero(name1, code1, name2, code2):
 
 def process_sheet(ws, sheet_name, all_heroes):
     """处理指定工作表中的武将数据，生成 Markdown 文件"""
-    monarch_names = {h["name"] for h in all_heroes if h.get("is_monarch")}
     current_package = None
     count = 0
 
@@ -99,24 +98,8 @@ def process_sheet(ws, sheet_name, all_heroes):
         if guest_factions:
             types.append("客将")
 
-        # 如果此武将不是君主，但名字在君主缓存里 → 可君主升变
-        if "君主" not in types and hero_name in monarch_names:
-            types.append("可君主升变")
-
         # 所属势力（用于 tags）
         forces_for_tags = parsed["所属势力"]
-
-        # tags 生成
-        all_tags = sort_tags_final(
-            sheet_name,
-            current_package,
-            types,
-            hero_name,
-            forces_for_tags,
-            parsed["效忠势力"],
-            parsed["伪装势力"],
-            guest_factions,
-        )
 
         # aliases
         aliases = [hero_name] + ([title] if title else [])
@@ -138,23 +121,23 @@ def process_sheet(ws, sheet_name, all_heroes):
 
         # 外层遍历 all_heroes
         for h in all_heroes:
-            # 1. 君主升变逻辑
             if is_same_hero(h["name"], h["code"], hero_name, code):
-                if h.get("is_monarch"):
-                    if not monarch_link:
-                        monarch_link = hero_link(h)
-                    continue  # 检测到君主升变，跳过野心家检测
-                else:
+                # 1. 君主升变逻辑
+                if (
+                    "君主" not in types
+                    and "野心家" not in types
+                    and h.get("is_monarch")
+                ):
+                    monarch_link = hero_link(h)
+                    types.append("可君主升变")
+                elif "君主" in types and not h.get("is_monarch"):
                     non_monarch_links.append(hero_link(h))
 
-            # 2. 野心家效忠逻辑（仅在未检测到君主升变时）
-            if not monarch_link and is_same_hero(h["name"], h["code"], hero_name, code):
-                if "野心家" in types:
-                    if not h.get("is_ambitious"):
-                        loyalty_links.append(hero_link(h))
-                else:
-                    if h.get("is_ambitious"):
-                        non_loyalty_link = hero_link(h)
+                # 2. 野心家效忠逻辑
+                elif "野心家" not in types and h.get("is_ambitious"):
+                    non_loyalty_link = hero_link(h)
+                elif "野心家" in types and not h.get("is_ambitious"):
+                    loyalty_links.append(hero_link(h))
 
             # 3. 珠联璧合逻辑（只有非君主武将）
             if "君主" not in types:
@@ -183,6 +166,18 @@ def process_sheet(ws, sheet_name, all_heroes):
 
         # 去重
         synergy_links = list(dict.fromkeys(synergy_links))
+
+        # tags 生成
+        all_tags = sort_tags_final(
+            sheet_name,
+            current_package,
+            types,
+            hero_name,
+            forces_for_tags,
+            parsed["效忠势力"],
+            parsed["伪装势力"],
+            guest_factions,
+        )
 
         # -------- YAML --------
         yaml_lines = ["---"]

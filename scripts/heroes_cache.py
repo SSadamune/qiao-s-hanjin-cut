@@ -20,7 +20,11 @@ def scan_all_heroes(wb, target_sheets):
             if not is_valid_hero_row(ws, row_idx):
                 continue
             code = str(ws.cell(row=row_idx, column=COL_CODE).value).strip()
-            hero_name = str(ws.cell(row=row_idx, column=COL_NAME).value).strip()
+            hero_name = (
+                str(ws.cell(row=row_idx, column=COL_NAME).value)
+                .strip()
+                .replace("&", "_")
+            )
             synergy_cell = ws.cell(row=row_idx, column=COL_SYNERGY).value
             if synergy_cell:
                 synergy_list = [
@@ -28,6 +32,7 @@ def scan_all_heroes(wb, target_sheets):
                     for s in str(synergy_cell)
                     .replace("，", ",")
                     .replace("、", ",")
+                    .replace("&", "_")
                     .split(",")
                     if s.strip()
                 ]
