@@ -9,7 +9,7 @@
 ```
 resources/乔剪国战表格.xlsx   # 武将数据源 Excel
 notes/武将/                   # 脚本自动生成的武将笔记
-scripts/excel_to_md.py        # Excel → Markdown 转换脚本
+scripts/hero_generator.py     # Excel → Markdown 转换脚本
 ```
 
 ## 🏗 在 Obsidian 中使用
@@ -30,8 +30,10 @@ pip install openpyxl zhconv
 
 ### 运行脚本
 
+以导入武将为例
+
 ```bash
-python scripts/excel_to_md.py
+python scripts/hero_generator.py
 ```
 
 脚本会读取《乔剪国战表格.xlsx》，生成或覆盖 `notes/武将/` 下的笔记。
