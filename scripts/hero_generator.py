@@ -4,9 +4,9 @@
 
 import os
 from openpyxl import load_workbook
-from constants import EXCEL_PATH, OUTPUT_DIR, TARGET_SHEETS
-from heroes_cache import scan_all_heroes
-from sheet_processor import process_sheet
+from domain.heroes.constants import EXCEL_PATH, OUTPUT_DIR, TARGET_SHEETS
+from domain.heroes.heroes_cache import scan_all_heroes
+from domain.heroes.sheet_processor import process_sheet
 
 
 def main():

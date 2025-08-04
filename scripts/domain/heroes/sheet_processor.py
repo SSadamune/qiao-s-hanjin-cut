@@ -4,7 +4,7 @@
 
 import os
 from zhconv import convert
-from constants import (
+from .constants import (
     COL_PACKAGE,
     COL_CODE,
     COL_NAME,
@@ -23,8 +23,8 @@ from constants import (
     OUTPUT_DIR,
     IGNORED_PACKAGES,
 )
-from utils import sanitize_filename, detect_guest_factions, sort_tags_final
-from parsers import parse_factions_from_code
+from .utils import sanitize_filename, detect_guest_factions, sort_tags_final, hero_link
+from .parsers import parse_factions_from_code
 
 # 等价武将
 SPECIAL_EQUIV = [
@@ -42,14 +42,8 @@ def is_same_hero(name1, code1, name2, code2):
     return name1 == name2
 
 
-def hero_link(hero):
-    """生成指向武将页面的链接"""
-    return f"[[{hero['code']} {hero['name']}]]"
-
-
 def process_sheet(ws, sheet_name, all_heroes):
     """处理指定工作表中的武将数据，生成 Markdown 文件"""
-    monarch_names = {h["name"] for h in all_heroes if h.get("is_monarch")}
     current_package = None
     count = 0
 
@@ -104,24 +98,8 @@ def process_sheet(ws, sheet_name, all_heroes):
         if guest_factions:
             types.append("客将")
 
-        # 如果此武将不是君主，但名字在君主缓存里 → 可君主升变
-        if "君主" not in types and hero_name in monarch_names:
-            types.append("可君主升变")
-
         # 所属势力（用于 tags）
         forces_for_tags = parsed["所属势力"]
-
-        # tags 生成
-        all_tags = sort_tags_final(
-            sheet_name,
-            current_package,
-            types,
-            hero_name,
-            forces_for_tags,
-            parsed["效忠势力"],
-            parsed["伪装势力"],
-            guest_factions,
-        )
 
         # aliases
         aliases = [hero_name] + ([title] if title else [])
@@ -134,60 +112,71 @@ def process_sheet(ws, sheet_name, all_heroes):
         synergy_links = []
 
         # 预处理当前武将的珠联璧合列表
-        current_synergy_list = []
+        current_synergy_set = set()
         if synergy and "君主" not in types:
             for s_name in synergy.split(" "):
                 s_name = s_name.strip()
                 if s_name and not is_same_hero(s_name, "", hero_name, code):
-                    current_synergy_list.append(s_name)
+                    current_synergy_set.add(s_name)
 
         # 外层遍历 all_heroes
         for h in all_heroes:
-            # 1. 君主升变逻辑
             if is_same_hero(h["name"], h["code"], hero_name, code):
-                if h.get("is_monarch"):
-                    if not monarch_link:
-                        monarch_link = hero_link(h)
-                    continue  # 检测到君主升变，跳过野心家检测
-                else:
+                # 1. 君主升变逻辑
+                if (
+                    "君主" not in types
+                    and "野心家" not in types
+                    and h.get("is_monarch")
+                ):
+                    monarch_link = hero_link(h)
+                    types.append("可君主升变")
+                elif "君主" in types and not h.get("is_monarch"):
                     non_monarch_links.append(hero_link(h))
 
-            # 2. 野心家效忠逻辑（仅在未检测到君主升变时）
-            if not monarch_link and is_same_hero(h["name"], h["code"], hero_name, code):
-                if "野心家" in types:
-                    if not h.get("is_ambitious"):
-                        loyalty_links.append(hero_link(h))
-                else:
-                    if h.get("is_ambitious"):
-                        non_loyalty_link = hero_link(h)
+                # 2. 野心家效忠逻辑
+                elif "野心家" not in types and h.get("is_ambitious"):
+                    non_loyalty_link = hero_link(h)
+                elif "野心家" in types and not h.get("is_ambitious"):
+                    loyalty_links.append(hero_link(h))
 
             # 3. 珠联璧合逻辑（只有非君主武将）
-            if "君主" not in types:
+            if "君主" not in types and not h.get("is_monarch"):
                 # 被其他武将珠联璧合指向
-                if not h.get("is_monarch") and h["name"] != hero_name:
-                    h_synergy = h.get("synergy", [])
-                    if isinstance(h_synergy, str):
-                        h_synergy_list = [
-                            x.strip() for x in h_synergy.split(" ") if x.strip()
-                        ]
-                    else:
-                        h_synergy_list = h_synergy
-                    for syn_name in h_synergy_list:
-                        if is_same_hero(hero_name, code, syn_name, ""):
-                            synergy_links.append(hero_link(h))
-                            break  # 只加一次
+                h_synergy = h.get("synergy", [])
+                if isinstance(h_synergy, str):
+                    h_synergy_set = {
+                        x.strip() for x in h_synergy.split(" ") if x.strip()
+                    }
+                else:
+                    h_synergy_set = set(h_synergy)
 
-                # 自己珠联璧合指向的武将（需考虑卧龙特殊等价）
-                if "君主" not in types:
-                    for s_name in current_synergy_list:
-                        if is_same_hero(h["name"], h["code"], s_name, "") and not h.get(
-                            "is_monarch"
-                        ):
-                            synergy_links.append(hero_link(h))
-                            break  # 只加第一个同名非君主
+                if any(
+                    is_same_hero(hero_name, code, syn_name, "")
+                    for syn_name in h_synergy_set
+                ):
+                    synergy_links.append(hero_link(h))
+
+                # 自己珠联璧合指向的武将
+                if h["name"] in current_synergy_set or any(
+                    is_same_hero(h["name"], h["code"], s_name, "")
+                    for s_name in current_synergy_set
+                ):
+                    synergy_links.append(hero_link(h))
 
         # 去重
         synergy_links = list(dict.fromkeys(synergy_links))
+
+        # tags 生成
+        all_tags = sort_tags_final(
+            sheet_name,
+            current_package,
+            types,
+            hero_name,
+            forces_for_tags,
+            parsed["效忠势力"],
+            parsed["伪装势力"],
+            guest_factions,
+        )
 
         # -------- YAML --------
         yaml_lines = ["---"]

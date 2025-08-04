@@ -3,7 +3,7 @@
 """
 
 import re
-from constants import (
+from .constants import (
     FORCE_MAP,
     COLOR_MEANINGS,
     FIRST_6_COLS,
@@ -12,6 +12,11 @@ from constants import (
     COL_NAME,
     SKIP_PREFIXES,
 )
+
+
+def hero_link(hero):
+    """生成指向武将页面的链接"""
+    return f"[[{sanitize_filename(hero['code'])} {hero['name'].replace('&', '_')}]]"
 
 
 def sanitize_filename(name: str) -> str:
