@@ -29,6 +29,7 @@ from .parsers import parse_factions_from_code
 # 等价武将
 SPECIAL_EQUIV = [
     ({"卧龙诸葛亮"}, {"SHU011"}),
+    ({"丞相诸葛亮"}, {"SHU004"}),
 ]
 
 
